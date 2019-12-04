@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<script>
+    var app = angular.module('myApp', []);
+
+    //angular controller - copyToClipController
+    app.controller('copyToClipController', ['$scope', '$rootScope', '$copyToClipboard', function ($scope, $rootScope, $copyToClipboard) {
+        var svm = $scope;
+        svm.userList = [
+            { "name": "Anil Singh", "email": "aks@gmail.com", "phone": "9011213333", "address": "Noida, UP, India" },
+            { "name": "Aradhya Singh", "email": "ara@gmail.com", "phone": "9013453363", "address": "GR. Noida, UP, India" }];
+
+        //copy user information
+        svm.copyUserToClipboard = function (e, user) {
+            let copyUserInfo = {
+                "Name": user.name,
+                "EmailId": user.email,
+                "Phone Number": user.phone,
+                "Full Address": user.address,
+            }
+            $copyToClipboard.copy(JSON.stringify(copyUserInfo))
+                .then(function () { });
+        }
+
+        //copy list of user information
+        svm.copyUsersToClipboard = function (e, users) {
+            var copyUsers = [];
+            angular.forEach(users, function (user, key) {
+                copyUsers.push({
+                    "Name": user.name,
+                    "EmailId": user.email,
+                    "Phone Number": user.phone,
+                    "Full Address": user.address,
+                });
+            }, copyUsers);
+            $copyToClipboard.copy(JSON.stringify(copyUsers))
+                .then(function () { });
+        }
+    }]);
+
+    //angular provider -  copyToClipboard 
+    app.provider('$copyToClipboard', [function () {
+        this.$get = ['$q', '$window', function ($q, $window) {
+            var body = angular.element($window.document.body);
+            var textarea = angular.element('<textarea/>');
+            textarea.css({
+                position: 'fixed',
+                opacity: '0'
+            });
+            return {
+                copy: function (stringToCopy) {
+                    var deferred = $q.defer();
+                    deferred.notify("copying the text to clipboard");
+                    textarea.val(stringToCopy);
+                    body.append(textarea);
+                    textarea[0].select();
+
+                    try {
+                        var successful = $window.document.execCommand('copy');
+                        if (!successful) throw successful;
+                        deferred.resolve(successful);
+                    } catch (err) {
+                        deferred.reject(err);
+                    } finally {
+                        textarea.remove();
+                    }
+                    return deferred.promise;
+                }
+            };
+        }];
+    }]);
+</script>
+
+<body>
+    <div ng-app="myApp">
+        <div ng-controller="copyToClipController">
+            <div class="copy">
+                <a data-ng-click="copyUsersToClipboard($event, userList)" href="javascript:void(0)"
+                    title="Copy Users">Copy
+                    User List</a>
+                <hr />
+            </div>
+            <div class="copy" ng-repeat="user in userList">
+                <ul>
+                    <span><a data-ng-click="copyUserToClipboard($event, user)" href="javascript:void(0)"
+                            title="Copy row">Copy
+                            this</a></span>
+                    <li>{{ user.name }}</li>
+                    <li>{{ user.email }}</li>
+                    <li>{{ user.phone }}</li>
+                    <li>{{ user.address }}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
